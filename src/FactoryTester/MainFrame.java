@@ -156,7 +156,7 @@ public class MainFrame extends JFrame {
 										TOFSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("cha.png")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 									} else {
 										if((rxData.rData[2] & 0x04) == 0x04) {
-											TOFSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("warning.jpg")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
+											TOFSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("warning_s.png")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 										} else {
 											TOFSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("dui.png")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 										}
@@ -165,7 +165,7 @@ public class MainFrame extends JFrame {
 										FLOWSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("cha.png")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 									} else {
 										if((rxData.rData[2] & 0x10) == 0x10) {
-											FLOWSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("warning.jpg")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
+											FLOWSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("warning_s.png")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 										} else {
 											FLOWSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("dui.png")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 										}
