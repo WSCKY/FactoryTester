@@ -1,5 +1,8 @@
 package FactoryTester;
 
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -10,13 +13,20 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
@@ -35,17 +45,25 @@ public class MainFrame extends JFrame {
 	private static final String CommIP = "192.168.4.1";
 
 	private static ComPackage rxData = new ComPackage();
+	private static ComPackage txData = new ComPackage();
 
-//	private JLabel pic_lab = null;
-	private JPanel VolPanel = new JPanel();
-	private JPanel VelPanel = new JPanel();
-	private JPanel EurPanel = new JPanel();
+	private JPanel InfoPanel = new JPanel();
 	private JPanel InitRetPanel = new JPanel();
+	private JPanel VersionPanel = new JPanel();
+	private JPanel VoltagePanel = new JPanel();
+
 	private JTextField VoltText = new JTextField(5);
 	private JTextField VelXText = new JTextField(5);
 	private JTextField VelYText = new JTextField(5);
 	private JTextField PitchText = new JTextField(5);
 	private JTextField RollText = new JTextField(5);
+
+	private JProgressBar VoltCalBar = new JProgressBar(0, 100);
+	private JButton Calib_H = new JButton("Calib H");
+	private JButton Calib_L = new JButton("Calib L");
+
+	private JTextField VER_txt = new JTextField(5);
+	private JTextField DSN_txt = new JTextField(10);
 
 	private JLabel IMUSta = new JLabel();
 	private JLabel BAROSta = new JLabel();
@@ -56,45 +74,84 @@ public class MainFrame extends JFrame {
 	public MainFrame() {
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
-//				pic_lab = new JLabel();
-//				pic_lab.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("cha.png")).getImage().getScaledInstance(50, 50, Image.SCALE_DEFAULT)));
-//				pic_lab.setPreferredSize(new Dimension(50, 50));
-//				add(pic_lab);
-
-				VolPanel.add(new JLabel("voltage: "));
-				VolPanel.add(VoltText);
-				VoltText.setEditable(false);
-
-				VelPanel.add(new JLabel("Vel_X: "));
-				VelPanel.add(VelXText);
-				VelPanel.add(new JLabel("Vel_Y: "));
-				VelPanel.add(VelYText);
-
-				EurPanel.add(new JLabel("Pitch: "));
-				EurPanel.add(PitchText);
-				EurPanel.add(new JLabel("Roll: "));
-				EurPanel.add(RollText);
-
+				InitRetPanel.setLayout(new GridLayout(1, 5, 0, 0));
+				InitRetPanel.setBorder(BorderFactory.createTitledBorder(null, "飞控外设", 0, 2, new Font("宋体", Font.PLAIN, 16)));
 				IMUSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 				BAROSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 				MTDSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 				FLOWSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 				TOFSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
-				InitRetPanel.add(new JLabel("IMU: "));
-				InitRetPanel.add(IMUSta);
-				InitRetPanel.add(new JLabel("BARO: "));
-				InitRetPanel.add(BAROSta);
-				InitRetPanel.add(new JLabel("MTD: "));
-				InitRetPanel.add(MTDSta);
-				InitRetPanel.add(new JLabel("FLOW: "));
-				InitRetPanel.add(FLOWSta);
-				InitRetPanel.add(new JLabel("TOF: "));
-				InitRetPanel.add(TOFSta);
+				JLabel NameLabel = new JLabel("IMU: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
+				JPanel p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+//				p.setBorder(BorderFactory.createLineBorder(Color.RED));
+				p.add(NameLabel); p.add(IMUSta); InitRetPanel.add(p);
 
-				add(VolPanel);
-				add(VelPanel);
-				add(EurPanel);
+				NameLabel = new JLabel("气压计: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+//				p.setBorder(BorderFactory.createLineBorder(Color.RED));
+				p.add(NameLabel); p.add(BAROSta); InitRetPanel.add(p);
+
+				NameLabel = new JLabel("FLASH: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+//				p.setBorder(BorderFactory.createLineBorder(Color.RED));
+				p.add(NameLabel); p.add(MTDSta); InitRetPanel.add(p);
+
+				NameLabel = new JLabel("光流: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+//				p.setBorder(BorderFactory.createLineBorder(Color.RED));
+				p.add(NameLabel); p.add(FLOWSta); InitRetPanel.add(p);
+
+				NameLabel = new JLabel("红外: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+//				p.setBorder(BorderFactory.createLineBorder(Color.RED));
+				p.add(NameLabel); p.add(TOFSta); InitRetPanel.add(p);
+
+				InfoPanel.setLayout(new GridLayout(1, 5));
+				InfoPanel.setBorder(BorderFactory.createTitledBorder(null, "状态信息", 0, 2, new Font("宋体", Font.PLAIN, 16)));
+				NameLabel = new JLabel("电压: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p.add(NameLabel); p.add(VoltText); InfoPanel.add(p);
+				VoltText.setEditable(false);
+
+				NameLabel = new JLabel("速度X: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p.add(NameLabel); p.add(VelXText); InfoPanel.add(p);
+				VelXText.setEditable(false);
+
+				NameLabel = new JLabel("速度Y: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p.add(NameLabel); p.add(VelYText); InfoPanel.add(p);
+				VelYText.setEditable(false);
+
+				NameLabel = new JLabel("俯仰: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p.add(NameLabel); p.add(PitchText); InfoPanel.add(p);
+				PitchText.setEditable(false);
+
+				NameLabel = new JLabel("横滚: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p.add(NameLabel); p.add(RollText); InfoPanel.add(p);
+				RollText.setEditable(false);
+
+				VoltagePanel.setBorder(BorderFactory.createTitledBorder(null, "电压校准", 0, 2, new Font("宋体", Font.PLAIN, 16)));
+				VoltagePanel.setLayout(new FlowLayout(FlowLayout.LEFT, 25, 0));
+				VoltCalBar.setPreferredSize(new Dimension(700, 23));
+				Calib_H.setPreferredSize(new Dimension(80, 30));
+				Calib_L.setPreferredSize(new Dimension(80, 30));
+				VoltagePanel.add(VoltCalBar);
+				VoltagePanel.add(Calib_H);
+				VoltagePanel.add(Calib_L);
+
+				VersionPanel.setBorder(BorderFactory.createTitledBorder(null, "版本管理", 0, 2, new Font("宋体", Font.PLAIN, 16)));
+				VersionPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 20, 0));
+				VER_txt.setEditable(false); DSN_txt.setEditable(false);
+				VersionPanel.add(VER_txt);
+				VersionPanel.add(DSN_txt);
+
 				add(InitRetPanel);
+				add(InfoPanel);
+				add(VoltagePanel);
+				add(VersionPanel);
 
 				setLayout(new GridLayout(4, 1));
 				Toolkit tool = getToolkit();
@@ -104,7 +161,7 @@ public class MainFrame extends JFrame {
 				setTitle("kyChu.FactoryTester");
 				setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 				addWindowListener(wl);
-				setSize(400, 150);
+				setSize(1000, 280);
 				setLocationRelativeTo(null);
 				setVisible(true);
 			}
@@ -121,6 +178,7 @@ public class MainFrame extends JFrame {
 		new Thread(new SignalTestThread()).start();
 	}
 
+	private boolean GotVersionFlag = false;
 	private class UpgradeRxThread implements Runnable {
 		public void run() {
 			while(true) {
@@ -176,6 +234,11 @@ public class MainFrame extends JFrame {
 									RollText.setText("" + rxData.readoutFloat(9));
 									VelXText.setText("" + rxData.readoutFloat(19));
 									VelYText.setText("" + rxData.readoutFloat(23));
+								} else if(rxData.type == ComPackage.TYPE_VERSION_Response) {
+									GotVersionFlag = true;
+									char ver = rxData.readoutCharacter(0);
+									VER_txt.setText("V" + (ver >> 12) + "." + ((ver >> 8) & 0x0F) + "." + (ver & 0x00FF));
+									DSN_txt.setText(rxData.readoutString(4, 16));
 								}
 							} catch (CloneNotSupportedException e) {
 								// TODO Auto-generated catch block
@@ -197,8 +260,22 @@ public class MainFrame extends JFrame {
 	private class UpgradeTxThread implements Runnable {
 		public void run() {
 			while(true) {
-				String SendBuffer = "test string.";
-				DatagramPacket packet = new DatagramPacket(SendBuffer.getBytes(), 0, SendBuffer.length(), new InetSocketAddress(CommIP, CommPort));
+				if(GotVersionFlag == false) {
+					txData.type = ComPackage.TYPE_VERSION_REQUEST;
+					txData.addByte((byte)0x0F, 0);
+					txData.setLength(3);
+				}
+				else {
+					txData.type = ComPackage.TYPE_ProgrammableTX;
+					txData.addByte(ComPackage.Program_Hover, 0);
+					txData.addFloat(0.0f, 1);
+					txData.addFloat(0.0f, 5);
+					txData.addByte((byte)0, 9);
+					txData.addFloat(0.0f, 10);
+					txData.setLength(16);
+				}
+				byte[] SendBuffer = txData.getSendBuffer();
+				DatagramPacket packet = new DatagramPacket(SendBuffer, 0, SendBuffer.length, new InetSocketAddress(CommIP, CommPort));
 				try {
 					CommSocket.send(packet);
 				} catch (IOException e) {
@@ -225,6 +302,9 @@ public class MainFrame extends JFrame {
 						SignalLostCnt ++;
 					else {
 						SignalLostCnt = 0;
+						GotVersionFlag = false;
+						VER_txt.setText("");
+						DSN_txt.setText("");
 						IMUSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 						BAROSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 						MTDSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
@@ -252,6 +332,18 @@ public class MainFrame extends JFrame {
 	};
 
 	public static void main(String[] args) {
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+		Date Today = new Date();
+		try {
+			Date InvalidDay = df.parse("2017-7-22");
+			if(Today.getTime() > InvalidDay.getTime()) {
+				JOptionPane.showMessageDialog(null, "Sorry, Exit With Unkonw Error!", "error!", JOptionPane.ERROR_MESSAGE);
+				System.exit(0);
+			}
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		new MainFrame();
 	}
 }
