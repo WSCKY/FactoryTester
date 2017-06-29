@@ -59,11 +59,12 @@ public class MainFrame extends JFrame {
 	private JTextField RollText = new JTextField(5);
 
 	private JProgressBar VoltCalBar = new JProgressBar(0, 100);
-	private JButton Calib_H = new JButton("Calib H");
-	private JButton Calib_L = new JButton("Calib L");
+	private JButton Calib_H = new JButton("高压校准");
+	private JButton Calib_L = new JButton("低压校准");
 
-	private JTextField VER_txt = new JTextField(5);
-	private JTextField DSN_txt = new JTextField(10);
+	private JTextField VER_txt = new JTextField(9);
+	private JTextField DSN_txt = new JTextField(16);
+	private JButton bUpdateDSN = new JButton("更新");
 
 	private JLabel IMUSta = new JLabel();
 	private JLabel BAROSta = new JLabel();
@@ -82,71 +83,77 @@ public class MainFrame extends JFrame {
 				FLOWSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 				TOFSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 				JLabel NameLabel = new JLabel("IMU: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
-				JPanel p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				JPanel p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
 //				p.setBorder(BorderFactory.createLineBorder(Color.RED));
 				p.add(NameLabel); p.add(IMUSta); InitRetPanel.add(p);
 
 				NameLabel = new JLabel("气压计: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
-				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
 //				p.setBorder(BorderFactory.createLineBorder(Color.RED));
 				p.add(NameLabel); p.add(BAROSta); InitRetPanel.add(p);
 
 				NameLabel = new JLabel("FLASH: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
-				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
 //				p.setBorder(BorderFactory.createLineBorder(Color.RED));
 				p.add(NameLabel); p.add(MTDSta); InitRetPanel.add(p);
 
 				NameLabel = new JLabel("光流: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
-				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
 //				p.setBorder(BorderFactory.createLineBorder(Color.RED));
 				p.add(NameLabel); p.add(FLOWSta); InitRetPanel.add(p);
 
 				NameLabel = new JLabel("红外: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
-				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
 //				p.setBorder(BorderFactory.createLineBorder(Color.RED));
 				p.add(NameLabel); p.add(TOFSta); InitRetPanel.add(p);
 
 				InfoPanel.setLayout(new GridLayout(1, 5));
 				InfoPanel.setBorder(BorderFactory.createTitledBorder(null, "状态信息", 0, 2, new Font("宋体", Font.PLAIN, 16)));
 				NameLabel = new JLabel("电压: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
-				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
 				p.add(NameLabel); p.add(VoltText); InfoPanel.add(p);
 				VoltText.setEditable(false);
 
 				NameLabel = new JLabel("速度X: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
-				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
 				p.add(NameLabel); p.add(VelXText); InfoPanel.add(p);
 				VelXText.setEditable(false);
 
 				NameLabel = new JLabel("速度Y: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
-				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
 				p.add(NameLabel); p.add(VelYText); InfoPanel.add(p);
 				VelYText.setEditable(false);
 
 				NameLabel = new JLabel("俯仰: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
-				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
 				p.add(NameLabel); p.add(PitchText); InfoPanel.add(p);
 				PitchText.setEditable(false);
 
 				NameLabel = new JLabel("横滚: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
-				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
 				p.add(NameLabel); p.add(RollText); InfoPanel.add(p);
 				RollText.setEditable(false);
 
 				VoltagePanel.setBorder(BorderFactory.createTitledBorder(null, "电压校准", 0, 2, new Font("宋体", Font.PLAIN, 16)));
-				VoltagePanel.setLayout(new FlowLayout(FlowLayout.LEFT, 25, 0));
-				VoltCalBar.setPreferredSize(new Dimension(700, 23));
-				Calib_H.setPreferredSize(new Dimension(80, 30));
-				Calib_L.setPreferredSize(new Dimension(80, 30));
-				VoltagePanel.add(VoltCalBar);
-				VoltagePanel.add(Calib_H);
-				VoltagePanel.add(Calib_L);
+				VoltagePanel.setLayout(new FlowLayout(FlowLayout.CENTER, 25, 0));
+				VoltCalBar.setPreferredSize(new Dimension(700, 23)); VoltagePanel.add(VoltCalBar);
+				Calib_H.setPreferredSize(new Dimension(100, 40)); VoltagePanel.add(Calib_H);
+				Calib_L.setPreferredSize(new Dimension(100, 40)); VoltagePanel.add(Calib_L);
 
 				VersionPanel.setBorder(BorderFactory.createTitledBorder(null, "版本管理", 0, 2, new Font("宋体", Font.PLAIN, 16)));
-				VersionPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 20, 0));
-				VER_txt.setEditable(false); DSN_txt.setEditable(false);
-				VersionPanel.add(VER_txt);
-				VersionPanel.add(DSN_txt);
+				VersionPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 3));
+				NameLabel = new JLabel("版本: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
+				VersionPanel.add(NameLabel);
+				VER_txt.setFont(new Font("Courier New", Font.BOLD, 26));
+				VER_txt.setEditable(false); VersionPanel.add(VER_txt);
+				NameLabel = new JLabel("序列号: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
+				VersionPanel.add(NameLabel);
+				DSN_txt.setFont(new Font("Courier New", Font.BOLD, 26));
+				DSN_txt.setEditable(false); VersionPanel.add(DSN_txt);
+				bUpdateDSN.setPreferredSize(new Dimension(100, 40));
+				bUpdateDSN.setFont(new Font("宋体", Font.BOLD, 20));
+				bUpdateDSN.setEnabled(false);
+				VersionPanel.add(bUpdateDSN);
 
 				add(InitRetPanel);
 				add(InfoPanel);
@@ -161,7 +168,7 @@ public class MainFrame extends JFrame {
 				setTitle("kyChu.FactoryTester");
 				setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 				addWindowListener(wl);
-				setSize(1000, 280);
+				setSize(1000, 320);
 				setLocationRelativeTo(null);
 				setVisible(true);
 			}
@@ -238,7 +245,13 @@ public class MainFrame extends JFrame {
 									GotVersionFlag = true;
 									char ver = rxData.readoutCharacter(0);
 									VER_txt.setText("V" + (ver >> 12) + "." + ((ver >> 8) & 0x0F) + "." + (ver & 0x00FF));
-									DSN_txt.setText(rxData.readoutString(4, 16));
+									String curDSN = rxData.readoutString(4, 16);
+									DSN_txt.setText(curDSN);
+									if(curDSN.equals("PXyyMMwwxxxxFn##")) {
+										bUpdateDSN.setEnabled(true);
+									} else {
+										bUpdateDSN.setEnabled(false);
+									}
 								}
 							} catch (CloneNotSupportedException e) {
 								// TODO Auto-generated catch block
@@ -305,6 +318,7 @@ public class MainFrame extends JFrame {
 						GotVersionFlag = false;
 						VER_txt.setText("");
 						DSN_txt.setText("");
+						bUpdateDSN.setEnabled(false);
 						IMUSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 						BAROSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 						MTDSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
