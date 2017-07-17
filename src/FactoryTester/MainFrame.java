@@ -6,6 +6,8 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -17,6 +19,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+//import java.util.Timer;
+//import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.BorderFactory;
@@ -33,11 +37,7 @@ import javax.swing.SwingUtilities;
 import protocol.ComPackage;
 import protocol.RxAnalyse;
 
-
 public class MainFrame extends JFrame {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	private static DatagramSocket CommSocket = null;
@@ -136,9 +136,12 @@ public class MainFrame extends JFrame {
 
 				VoltagePanel.setBorder(BorderFactory.createTitledBorder(null, "电压校准", 0, 2, new Font("宋体", Font.PLAIN, 16)));
 				VoltagePanel.setLayout(new FlowLayout(FlowLayout.CENTER, 25, 0));
-				VoltCalBar.setPreferredSize(new Dimension(700, 23)); VoltagePanel.add(VoltCalBar);
+				VoltCalBar.setPreferredSize(new Dimension(700, 30)); VoltCalBar.setString("");
+				VoltCalBar.setFont(VoltCalBar.getFont().deriveFont(Font.ITALIC | Font.BOLD, 16));
+				VoltCalBar.setStringPainted(true); VoltagePanel.add(VoltCalBar);
 				Calib_H.setPreferredSize(new Dimension(100, 40)); VoltagePanel.add(Calib_H);
 				Calib_L.setPreferredSize(new Dimension(100, 40)); VoltagePanel.add(Calib_L);
+				Calib_H.addActionListener(hbl); Calib_L.addActionListener(lbl);
 
 				VersionPanel.setBorder(BorderFactory.createTitledBorder(null, "版本管理", 0, 2, new Font("宋体", Font.PLAIN, 16)));
 				VersionPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 3));
@@ -152,7 +155,7 @@ public class MainFrame extends JFrame {
 				DSN_txt.setEditable(false); VersionPanel.add(DSN_txt);
 				bUpdateDSN.setPreferredSize(new Dimension(100, 40));
 				bUpdateDSN.setFont(new Font("宋体", Font.BOLD, 20));
-				bUpdateDSN.setEnabled(false);
+				bUpdateDSN.setEnabled(false); bUpdateDSN.addActionListener(ubl);
 				VersionPanel.add(bUpdateDSN);
 
 				add(InitRetPanel);
@@ -183,9 +186,16 @@ public class MainFrame extends JFrame {
 		new Thread(new UpgradeRxThread()).start();
 		new Thread(new UpgradeTxThread()).start();
 		new Thread(new SignalTestThread()).start();
+//		Timer timer = new Timer();
+//		timer.schedule(new TimerTask() {
+//			public void run() {
+//				System.out.println("/* 2000ms.... */");
+//			}
+//		}, 2000);
 	}
 
 	private boolean GotVersionFlag = false;
+	private boolean WriteNewDSNFlag = false;
 	private class UpgradeRxThread implements Runnable {
 		public void run() {
 			while(true) {
@@ -252,6 +262,37 @@ public class MainFrame extends JFrame {
 									} else {
 										bUpdateDSN.setEnabled(false);
 									}
+									if(WriteNewDSNFlag == true) {
+										if(curDSN.equals(_NewDSN)) {
+											WriteNewDSNFlag = false;
+											bUpdateDSN.setEnabled(false);
+										}
+									}
+								} else if(rxData.type == ComPackage.TYPE_ADC_CALIB_ACK) {
+									if(rxData.rData[2] != 0x0) { /* Exception. */
+										Calib_H.setEnabled(true);
+										Calib_L.setEnabled(true);
+										VoltCalBar.setValue(0);
+										VoltCalBar.setString("");
+										VoltCalibState = 0;/* Exit Calibrate. */
+										if(rxData.rData[2] == 0x1)
+											JOptionPane.showMessageDialog(null, "电压错误！", "error!", JOptionPane.ERROR_MESSAGE);
+//										else if(rxData.rData[2] == 0x2)
+//											JOptionPane.showMessageDialog(null, "采样错误！", "error!", JOptionPane.ERROR_MESSAGE);
+										else
+											JOptionPane.showMessageDialog(null, "未知错误！", "error!", JOptionPane.ERROR_MESSAGE);
+									} else {
+										VoltCalBar.setValue(rxData.rData[1]);
+										VoltCalBar.setString((rxData.rData[0] == ComPackage.ADC_CALIBRATE_H ? "H" : "L") + " Sampling ..." + rxData.rData[1] + "%");
+										if(rxData.rData[1] >= 100) {//complete.
+											Calib_H.setEnabled(true);
+											Calib_L.setEnabled(true);
+											VoltCalBar.setValue(0);
+											VoltCalBar.setString("");
+											VoltCalibState = 0;/* Exit Calibrate. */
+											JOptionPane.showMessageDialog(null, "校准完成！", "ok!", JOptionPane.INFORMATION_MESSAGE);
+										}
+									}
 								}
 							} catch (CloneNotSupportedException e) {
 								// TODO Auto-generated catch block
@@ -270,15 +311,33 @@ public class MainFrame extends JFrame {
 		}
 	}
 
+	private static byte VoltCalibState = 0;
+	private static int _wDSN_CmdTog = 0;
 	private class UpgradeTxThread implements Runnable {
 		public void run() {
 			while(true) {
-				if(GotVersionFlag == false) {
+				if(VoltCalibState == ComPackage.ADC_CALIBRATE_H || VoltCalibState == ComPackage.ADC_CALIBRATE_L) {
+					txData.type = ComPackage.TYPE_ADC_CALIBRATE;
+					txData.addByte(VoltCalibState, 0);
+					txData.addByte((byte)(VoltCalibState ^ 0xAA), 1);
+					txData.setLength(4);
+				} else if(GotVersionFlag == false) {
 					txData.type = ComPackage.TYPE_VERSION_REQUEST;
 					txData.addByte((byte)0x0F, 0);
 					txData.setLength(3);
-				}
-				else {
+				} else if(WriteNewDSNFlag == true) {
+					if(_wDSN_CmdTog % 2 == 0) {
+						txData.type = ComPackage.TYPE_VERSION_REQUEST;
+						txData.addByte((byte)0x0F, 0);
+						txData.setLength(3);
+					} else {
+						txData.type = ComPackage.TYPE_DSN_UPDATE;
+						txData.addBytes(_NewDSN.getBytes(), 16, 0);
+						txData.addByte((byte)0xBB, 16);
+						txData.setLength(19);
+					}
+					_wDSN_CmdTog ++;
+				} else {/* no operation */
 					txData.type = ComPackage.TYPE_ProgrammableTX;
 					txData.addByte(ComPackage.Program_Hover, 0);
 					txData.addFloat(0.0f, 1);
@@ -307,7 +366,7 @@ public class MainFrame extends JFrame {
 
 	private static boolean GotResponseFlag = false;
 	private static int SignalLostCnt = 0;
-	private class SignalTestThread implements Runnable{
+	private class SignalTestThread implements Runnable {
 		public void run() {
 			while(true) {
 				if(GotResponseFlag == false) {
@@ -339,6 +398,51 @@ public class MainFrame extends JFrame {
 		}
 	}
 
+	private static byte VoltCalibReqVal = 0;
+	private ActionListener hbl = new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+			Calib_H.setEnabled(false);
+			Calib_L.setEnabled(false);
+			VoltCalibReqVal = ComPackage.ADC_CALIBRATE_H;
+			new Thread(new VoltSampleWaitThread()).start();
+		}
+	};
+
+	private ActionListener lbl = new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+			Calib_H.setEnabled(false);
+			Calib_L.setEnabled(false);
+			VoltCalibReqVal = ComPackage.ADC_CALIBRATE_L;
+			new Thread(new VoltSampleWaitThread()).start();
+		}
+	};
+
+	private class VoltSampleWaitThread implements Runnable {
+		public void run() {
+			int tCnt = 0;
+			VoltCalBar.setString("Waiting ...");
+			for(tCnt = 0; tCnt < 21; tCnt ++) {
+				VoltCalBar.setValue((int) (tCnt * 5));
+				try {
+					TimeUnit.MILLISECONDS.sleep(100);//100ms loop.
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					System.err.println("Interrupted");
+				}
+			}
+			VoltCalibState = VoltCalibReqVal;
+		}
+	}
+
+	private String _NewDSN = "PX1707170001F1CN";
+	private ActionListener ubl = new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+//			System.out.println("Update DSN");
+			WriteNewDSNFlag = true;
+			bUpdateDSN.setEnabled(false);
+		}
+	};
+
 	WindowAdapter wl = new WindowAdapter() {
 		public void windowClosing(WindowEvent e) {
 			System.exit(0);
@@ -351,7 +455,7 @@ public class MainFrame extends JFrame {
 		try {
 			Date InvalidDay = df.parse("2017-7-22");
 			if(Today.getTime() > InvalidDay.getTime()) {
-				JOptionPane.showMessageDialog(null, "Sorry, Exit With Unkonw Error!", "error!", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "Sorry, Exit With Unknow Error!", "error!", JOptionPane.ERROR_MESSAGE);
 				System.exit(0);
 			}
 		} catch (ParseException e) {
