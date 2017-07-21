@@ -1,5 +1,6 @@
 package FactoryTester;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -24,13 +25,17 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
@@ -40,6 +45,8 @@ import protocol.RxAnalyse;
 public class MainFrame extends JFrame {
 	private static final long serialVersionUID = 1L;
 
+	private static int DroneType = 1;
+
 	private static DatagramSocket CommSocket = null;
 	private static final int CommPort = 6000;
 	private static final String CommIP = "192.168.4.1";
@@ -47,10 +54,14 @@ public class MainFrame extends JFrame {
 	private static ComPackage rxData = new ComPackage();
 	private static ComPackage txData = new ComPackage();
 
+	DSNGenerator dsnGenerator = null;
+
 	private JPanel InfoPanel = new JPanel();
 	private JPanel InitRetPanel = new JPanel();
 	private JPanel VersionPanel = new JPanel();
 	private JPanel VoltagePanel = new JPanel();
+	private JPanel LEDPanel = new JPanel();
+	private JPanel ESCBurnInPanel = new JPanel();
 
 	private JTextField VoltText = new JTextField(5);
 	private JTextField VelXText = new JTextField(5);
@@ -71,6 +82,20 @@ public class MainFrame extends JFrame {
 	private JLabel MTDSta = new JLabel();
 	private JLabel FLOWSta = new JLabel();
 	private JLabel TOFSta = new JLabel();
+
+	private JCheckBox Red_Box = new JCheckBox("红");
+	private JCheckBox Blue_Box = new JCheckBox("蓝");
+	private JCheckBox Green_Box = new JCheckBox("绿");
+
+	private JProgressBar ESCBurnInBar = new JProgressBar(0, 100);
+	private JButton StartBurnInBtn = new JButton("开始");
+	private JButton StopBurnInBtn = new JButton("停止");
+
+	private JDialog DroneSelectDialog = new JDialog(this, "设置机型");
+	private JRadioButton F1_sel = new JRadioButton("虹湾F1", true);
+	private JRadioButton F2_sel = new JRadioButton("虹湾F2", false);
+	private ButtonGroup sel_bg = new ButtonGroup();
+	private JButton DroneConfirmButton = new JButton("确定");
 
 	public MainFrame() {
 		SwingUtilities.invokeLater(new Runnable() {
@@ -139,8 +164,8 @@ public class MainFrame extends JFrame {
 				VoltCalBar.setPreferredSize(new Dimension(700, 30)); VoltCalBar.setString("");
 				VoltCalBar.setFont(VoltCalBar.getFont().deriveFont(Font.ITALIC | Font.BOLD, 16));
 				VoltCalBar.setStringPainted(true); VoltagePanel.add(VoltCalBar);
-				Calib_H.setPreferredSize(new Dimension(100, 40)); VoltagePanel.add(Calib_H);
-				Calib_L.setPreferredSize(new Dimension(100, 40)); VoltagePanel.add(Calib_L);
+				Calib_H.setPreferredSize(new Dimension(100, 40)); VoltagePanel.add(Calib_H); Calib_H.setEnabled(false);
+				Calib_L.setPreferredSize(new Dimension(100, 40)); VoltagePanel.add(Calib_L); Calib_L.setEnabled(false);
 				Calib_H.addActionListener(hbl); Calib_L.addActionListener(lbl);
 
 				VersionPanel.setBorder(BorderFactory.createTitledBorder(null, "版本管理", 0, 2, new Font("宋体", Font.PLAIN, 16)));
@@ -158,22 +183,76 @@ public class MainFrame extends JFrame {
 				bUpdateDSN.setEnabled(false); bUpdateDSN.addActionListener(ubl);
 				VersionPanel.add(bUpdateDSN);
 
+				LEDPanel.setBorder(BorderFactory.createTitledBorder(null, "主状态灯", 0, 2, new Font("宋体", Font.PLAIN, 16)));
+				LEDPanel.setBackground(new Color(120, 120, 120)); LEDPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 150, 0));
+				Red_Box.setFont(new Font("宋体", Font.BOLD, 30)); Red_Box.addActionListener(ledl);
+				Blue_Box.setFont(new Font("宋体", Font.BOLD, 30)); Blue_Box.addActionListener(ledl);
+				Green_Box.setFont(new Font("宋体", Font.BOLD, 30)); Green_Box.addActionListener(ledl);
+				LEDPanel.add(Red_Box); LEDPanel.add(Blue_Box); LEDPanel.add(Green_Box);
+
+				ESCBurnInPanel.setBorder(BorderFactory.createTitledBorder(null, "老化测试", 0, 2, new Font("宋体", Font.PLAIN, 16)));
+				ESCBurnInPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 25, 5));
+				ESCBurnInBar.setPreferredSize(new Dimension(700, 30)); ESCBurnInBar.setString("");
+				ESCBurnInBar.setFont(ESCBurnInBar.getFont().deriveFont(Font.ITALIC | Font.BOLD, 16));
+				ESCBurnInBar.setStringPainted(true); ESCBurnInPanel.add(ESCBurnInBar);
+				StartBurnInBtn.setPreferredSize(new Dimension(100, 40)); StartBurnInBtn.setEnabled(false);
+				StartBurnInBtn.setFont(StartBurnInBtn.getFont().deriveFont(Font.BOLD, 20));
+				StartBurnInBtn.addActionListener(bstartl);
+				StopBurnInBtn.setPreferredSize(new Dimension(100, 40)); StopBurnInBtn.setEnabled(false);
+				StopBurnInBtn.setFont(StopBurnInBtn.getFont().deriveFont(Font.BOLD, 20));
+				StopBurnInBtn.addActionListener(bstopl);
+				ESCBurnInPanel.add(StartBurnInBtn); ESCBurnInPanel.add(StopBurnInBtn);
+
 				add(InitRetPanel);
 				add(InfoPanel);
 				add(VoltagePanel);
 				add(VersionPanel);
+				add(LEDPanel);
+				add(ESCBurnInPanel);
 
-				setLayout(new GridLayout(4, 1));
+				setLayout(new GridLayout(6, 1));
 				Toolkit tool = getToolkit();
 				setIconImage(tool.getImage(MainFrame.class.getResource("FactoryTest.png")));
 
 				setResizable(false);
-				setTitle("kyChu.FactoryTester");
+				setTitle("kyChu.FactoryTester V0.1.0");
 				setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 				addWindowListener(wl);
-				setSize(1000, 320);
+				setSize(1000, 500);
 				setLocationRelativeTo(null);
 				setVisible(true);
+
+				/* Drone Type Selector. */
+				F1_sel.setFont(F1_sel.getFont().deriveFont(Font.BOLD, 16));
+				F1_sel.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						DroneType = 1;
+					}
+				});
+				F2_sel.setFont(F2_sel.getFont().deriveFont(Font.BOLD, 16));
+				F2_sel.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						DroneType = 2;
+					}
+				});
+				sel_bg.add(F1_sel); sel_bg.add(F2_sel);
+				DroneConfirmButton.setPreferredSize(new Dimension(90, 36));
+				DroneConfirmButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						DroneSelectDialog.dispose();
+					}
+				});
+				DroneSelectDialog.setResizable(false);
+				DroneSelectDialog.setSize(280, 140);
+				DroneSelectDialog.setLocationRelativeTo(null);
+				DroneSelectDialog.setModal(true);
+				DroneSelectDialog.setLayout(new FlowLayout(FlowLayout.CENTER, 50, 15));
+				DroneSelectDialog.add(F1_sel); DroneSelectDialog.add(F2_sel);
+				DroneSelectDialog.add(DroneConfirmButton);
+				DroneSelectDialog.getRootPane().setDefaultButton(DroneConfirmButton);
+				DroneSelectDialog.setVisible(true);
+
+				dsnGenerator = new DSNGenerator(DroneType);
 			}
 		});
 		try {
@@ -208,6 +287,13 @@ public class MainFrame extends JFrame {
 						RxAnalyse.rx_decode(recData[i]);
 					if(RxAnalyse.GotNewPackage()) {
 						GotResponseFlag = true;
+						if(VoltCalibStartFlag == false) {
+							Calib_H.setEnabled(true); Calib_L.setEnabled(true);
+						}
+						StopBurnInBtn.setEnabled(true);
+						if(ESCBurnInRunningFlag == false) {
+							StartBurnInBtn.setEnabled(true);
+						}
 						synchronized(new String("")) {//unnecessary (copy).
 							try {
 								rxData = (ComPackage) RxAnalyse.RecPackage.PackageCopy();
@@ -266,6 +352,7 @@ public class MainFrame extends JFrame {
 										if(curDSN.equals(_NewDSN)) {
 											WriteNewDSNFlag = false;
 											bUpdateDSN.setEnabled(false);
+											dsnGenerator.SaveThisDSN();
 										}
 									}
 								} else if(rxData.type == ComPackage.TYPE_ADC_CALIB_ACK) {
@@ -274,6 +361,7 @@ public class MainFrame extends JFrame {
 										Calib_L.setEnabled(true);
 										VoltCalBar.setValue(0);
 										VoltCalBar.setString("");
+										VoltCalibStartFlag = false;
 										VoltCalibState = 0;/* Exit Calibrate. */
 										if(rxData.rData[2] == 0x1)
 											JOptionPane.showMessageDialog(null, "电压错误！", "error!", JOptionPane.ERROR_MESSAGE);
@@ -289,22 +377,20 @@ public class MainFrame extends JFrame {
 											Calib_L.setEnabled(true);
 											VoltCalBar.setValue(0);
 											VoltCalBar.setString("");
+											VoltCalibStartFlag = false;
 											VoltCalibState = 0;/* Exit Calibrate. */
 											JOptionPane.showMessageDialog(null, "校准完成！", "ok!", JOptionPane.INFORMATION_MESSAGE);
 										}
 									}
 								}
 							} catch (CloneNotSupportedException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 						}
 					}
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (CloneNotSupportedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -320,6 +406,11 @@ public class MainFrame extends JFrame {
 					txData.type = ComPackage.TYPE_ADC_CALIBRATE;
 					txData.addByte(VoltCalibState, 0);
 					txData.addByte((byte)(VoltCalibState ^ 0xAA), 1);
+					txData.setLength(4);
+				} else if(ESCBurnInRunningFlag == true) {
+					txData.type = ComPackage.TYPE_ESC_BURN_IN_TEST;
+					txData.addByte(ESCBurnExpSpeed, 0);
+					txData.addByte((byte) (ESCBurnExpSpeed ^ 0xCC), 1);
 					txData.setLength(4);
 				} else if(GotVersionFlag == false) {
 					txData.type = ComPackage.TYPE_VERSION_REQUEST;
@@ -338,26 +429,24 @@ public class MainFrame extends JFrame {
 					}
 					_wDSN_CmdTog ++;
 				} else {/* no operation */
-					txData.type = ComPackage.TYPE_ProgrammableTX;
-					txData.addByte(ComPackage.Program_Hover, 0);
-					txData.addFloat(0.0f, 1);
+					txData.type = ComPackage.TYPE_DeviceCheckReq;
+					txData.addByte(ComPackage._dev_LED, 0);
+					txData.addByte(LEDValue, 1);
 					txData.addFloat(0.0f, 5);
 					txData.addByte((byte)0, 9);
 					txData.addFloat(0.0f, 10);
-					txData.setLength(16);
+					txData.setLength(10);
 				}
 				byte[] SendBuffer = txData.getSendBuffer();
 				DatagramPacket packet = new DatagramPacket(SendBuffer, 0, SendBuffer.length, new InetSocketAddress(CommIP, CommPort));
 				try {
 					CommSocket.send(packet);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				try {
 					TimeUnit.MILLISECONDS.sleep(100);//100ms
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					System.err.println("Interrupted");
 				}
 			}
@@ -375,9 +464,10 @@ public class MainFrame extends JFrame {
 					else {
 						SignalLostCnt = 0;
 						GotVersionFlag = false;
-						VER_txt.setText("");
-						DSN_txt.setText("");
+						VER_txt.setText(""); DSN_txt.setText("");
 						bUpdateDSN.setEnabled(false);
+						Calib_H.setEnabled(false); Calib_L.setEnabled(false);
+						StartBurnInBtn.setEnabled(false); StopBurnInBtn.setEnabled(false);
 						IMUSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 						BAROSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 						MTDSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
@@ -391,29 +481,35 @@ public class MainFrame extends JFrame {
 				try {
 					TimeUnit.MILLISECONDS.sleep(50);//50ms loop.
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					System.err.println("Interrupted");
 				}
 			}
 		}
 	}
 
+	private static boolean VoltCalibStartFlag = false;
 	private static byte VoltCalibReqVal = 0;
 	private ActionListener hbl = new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-			Calib_H.setEnabled(false);
-			Calib_L.setEnabled(false);
-			VoltCalibReqVal = ComPackage.ADC_CALIBRATE_H;
-			new Thread(new VoltSampleWaitThread()).start();
+			if(VoltCalibStartFlag == false) {
+				Calib_H.setEnabled(false);
+				Calib_L.setEnabled(false);
+				VoltCalibStartFlag = true;
+				VoltCalibReqVal = ComPackage.ADC_CALIBRATE_H;
+				new Thread(new VoltSampleWaitThread()).start();
+			}
 		}
 	};
 
 	private ActionListener lbl = new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-			Calib_H.setEnabled(false);
-			Calib_L.setEnabled(false);
-			VoltCalibReqVal = ComPackage.ADC_CALIBRATE_L;
-			new Thread(new VoltSampleWaitThread()).start();
+			if(VoltCalibStartFlag == false) {
+				Calib_H.setEnabled(false);
+				Calib_L.setEnabled(false);
+				VoltCalibStartFlag = true;
+				VoltCalibReqVal = ComPackage.ADC_CALIBRATE_L;
+				new Thread(new VoltSampleWaitThread()).start();
+			}
 		}
 	};
 
@@ -426,7 +522,6 @@ public class MainFrame extends JFrame {
 				try {
 					TimeUnit.MILLISECONDS.sleep(100);//100ms loop.
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					System.err.println("Interrupted");
 				}
 			}
@@ -434,17 +529,100 @@ public class MainFrame extends JFrame {
 		}
 	}
 
-	private String _NewDSN = "PX1707170001F1CN";
+	private String _NewDSN = "PXyyMMwwxxxxFn##";
 	private ActionListener ubl = new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-//			System.out.println("Update DSN");
 			WriteNewDSNFlag = true;
 			bUpdateDSN.setEnabled(false);
+			_NewDSN = dsnGenerator.GotNewDSN();
+		}
+	};
+
+	private byte LEDValue = 0;
+	private ActionListener ledl = new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+			LEDValue = 0;
+			int red = 0, blue = 0, green = 0;
+			if(Red_Box.isSelected()) {
+				red = 255; LEDValue |= (byte)0x01;
+			} if(Blue_Box.isSelected()) {
+				blue = 255; LEDValue |= (byte)0x02;
+			} if(Green_Box.isSelected()) {
+				green = 255; LEDValue |= (byte)0x04;
+			}
+			if(red == 0 && blue == 0 && green == 0)
+				red = blue = green = 120;
+			LEDPanel.setBackground(new Color(red, green, blue));
+		}
+	};
+
+	private static boolean ESCBurnInStartFlag = false;
+	private static boolean ESCBurnInRunningFlag = false;
+	private ActionListener bstartl = new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+			if(ESCBurnInRunningFlag == false) {
+				ESCBurnInStartFlag = true;
+				ESCBurnInRunningFlag = true;
+				StartBurnInBtn.setEnabled(false);
+				new Thread(new ESCBurnInThread()).start();
+			}
+		}
+	};
+
+	private byte ESCBurnExpSpeed = 0;
+	private class ESCBurnInThread implements Runnable {
+		public void run() {
+			int TimeCnt = 0;
+			long TimeStart = 0;
+			while(ESCBurnInStartFlag) {
+				if(TimeCnt < 25) {
+					TimeCnt ++;
+					ESCBurnInBar.setValue(TimeCnt * 4);
+					ESCBurnInBar.setString("提速中...");
+					TimeStart = System.currentTimeMillis();
+				} else if((System.currentTimeMillis() - TimeStart) <= 300000) { //5min
+					long t = (System.currentTimeMillis() - TimeStart);
+					int min = (int) (t / 60000);
+					int sec = (int) ((t % 60000) / 1000);
+					ESCBurnInBar.setString(min + "m" + sec + "s");
+					ESCBurnInBar.setValue((int) ((System.currentTimeMillis() - TimeStart) / 3000));
+				} else {
+					ESCBurnInStartFlag = false;
+				}
+				ESCBurnExpSpeed = (byte) (TimeCnt * 2);
+				try {
+					TimeUnit.MILLISECONDS.sleep(100);//100ms loop.
+				} catch (InterruptedException e) {
+					System.err.println("Interrupted");
+				}
+			}
+			ESCBurnInBar.setValue(0);
+			while(TimeCnt > 0) {
+				TimeCnt --;
+				ESCBurnInBar.setString("降速中...");
+				ESCBurnExpSpeed = (byte) (TimeCnt * 2);
+				try {
+					TimeUnit.MILLISECONDS.sleep(100);//100ms loop.
+				} catch (InterruptedException e) {
+					System.err.println("Interrupted");
+				}
+			}
+			ESCBurnInBar.setString("");
+			ESCBurnInRunningFlag = false;
+		}
+	}
+
+	private ActionListener bstopl = new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+			if(ESCBurnInStartFlag == true) {
+				ESCBurnInStartFlag = false;
+			}
 		}
 	};
 
 	WindowAdapter wl = new WindowAdapter() {
 		public void windowClosing(WindowEvent e) {
+			dsnGenerator.GeneratorClose();
 			System.exit(0);
 		}
 	};
@@ -453,13 +631,12 @@ public class MainFrame extends JFrame {
 		DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 		Date Today = new Date();
 		try {
-			Date InvalidDay = df.parse("2017-7-22");
+			Date InvalidDay = df.parse("2018-6-01");
 			if(Today.getTime() > InvalidDay.getTime()) {
 				JOptionPane.showMessageDialog(null, "Sorry, Exit With Unknow Error!", "error!", JOptionPane.ERROR_MESSAGE);
 				System.exit(0);
 			}
 		} catch (ParseException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		new MainFrame();
