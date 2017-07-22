@@ -63,11 +63,16 @@ public class MainFrame extends JFrame {
 	private JPanel LEDPanel = new JPanel();
 	private JPanel ESCBurnInPanel = new JPanel();
 
-	private JTextField VoltText = new JTextField(5);
-	private JTextField VelXText = new JTextField(5);
-	private JTextField VelYText = new JTextField(5);
-	private JTextField PitchText = new JTextField(5);
-	private JTextField RollText = new JTextField(5);
+//	private JTextField VoltText = new JTextField(5);
+//	private JTextField VelXText = new JTextField(5);
+//	private JTextField VelYText = new JTextField(5);
+//	private JTextField PitchText = new JTextField(5);
+//	private JTextField RollText = new JTextField(5);
+	private JLabel VoltText = new JLabel("0.0");
+	private JLabel VelXText = new JLabel("0.0");
+	private JLabel VelYText = new JLabel("0.0");
+	private JLabel PitchText = new JLabel("0.0");
+	private JLabel RollText = new JLabel("0.0");
 
 	private JProgressBar VoltCalBar = new JProgressBar(0, 100);
 	private JButton Calib_H = new JButton("高压校准");
@@ -136,28 +141,28 @@ public class MainFrame extends JFrame {
 				InfoPanel.setBorder(BorderFactory.createTitledBorder(null, "状态信息", 0, 2, new Font("宋体", Font.PLAIN, 16)));
 				NameLabel = new JLabel("电压: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
 				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
+				VoltText.setFont(VoltText.getFont().deriveFont(Font.BOLD, 28));
 				p.add(NameLabel); p.add(VoltText); InfoPanel.add(p);
-				VoltText.setEditable(false);
 
 				NameLabel = new JLabel("速度X: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
 				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
+				VelXText.setFont(VelXText.getFont().deriveFont(Font.BOLD, 28));
 				p.add(NameLabel); p.add(VelXText); InfoPanel.add(p);
-				VelXText.setEditable(false);
 
 				NameLabel = new JLabel("速度Y: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
 				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
+				VelYText.setFont(VelYText.getFont().deriveFont(Font.BOLD, 28));
 				p.add(NameLabel); p.add(VelYText); InfoPanel.add(p);
-				VelYText.setEditable(false);
 
 				NameLabel = new JLabel("俯仰: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
 				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
+				PitchText.setFont(PitchText.getFont().deriveFont(Font.BOLD, 28));
 				p.add(NameLabel); p.add(PitchText); InfoPanel.add(p);
-				PitchText.setEditable(false);
 
 				NameLabel = new JLabel("横滚: "); NameLabel.setFont(new Font("宋体", Font.BOLD, 20));
 				p = new JPanel(); p.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 8));
+				RollText.setFont(RollText.getFont().deriveFont(Font.BOLD, 28));
 				p.add(NameLabel); p.add(RollText); InfoPanel.add(p);
-				RollText.setEditable(false);
 
 				VoltagePanel.setBorder(BorderFactory.createTitledBorder(null, "电压校准", 0, 2, new Font("宋体", Font.PLAIN, 16)));
 				VoltagePanel.setLayout(new FlowLayout(FlowLayout.CENTER, 25, 0));
@@ -332,11 +337,11 @@ public class MainFrame extends JFrame {
 										}
 									}
 									int val = rxData.rData[14] & 0xFF;
-									VoltText.setText("" + ((float)val + 640.0)/71.0);
-									PitchText.setText("" + rxData.readoutFloat(5));
-									RollText.setText("" + rxData.readoutFloat(9));
-									VelXText.setText("" + rxData.readoutFloat(19));
-									VelYText.setText("" + rxData.readoutFloat(23));
+									VoltText.setText(String.format("%.2f", ((float)val + 640.0)/71.0));
+									PitchText.setText(String.format("%.2f", rxData.readoutFloat(5)));
+									RollText.setText(String.format("%.2f", rxData.readoutFloat(9)));
+									VelXText.setText(String.format("%.2f", rxData.readoutFloat(19)));
+									VelYText.setText(String.format("%.2f", rxData.readoutFloat(23)));
 								} else if(rxData.type == ComPackage.TYPE_VERSION_Response) {
 									GotVersionFlag = true;
 									char ver = rxData.readoutCharacter(0);
@@ -584,7 +589,7 @@ public class MainFrame extends JFrame {
 					long t = (System.currentTimeMillis() - TimeStart);
 					int min = (int) (t / 60000);
 					int sec = (int) ((t % 60000) / 1000);
-					ESCBurnInBar.setString(min + "m" + sec + "s");
+					ESCBurnInBar.setString(min + "分" + sec + "秒");
 					ESCBurnInBar.setValue((int) ((System.currentTimeMillis() - TimeStart) / 3000));
 				} else {
 					ESCBurnInStartFlag = false;
