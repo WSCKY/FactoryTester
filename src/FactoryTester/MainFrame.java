@@ -215,7 +215,7 @@ public class MainFrame extends JFrame {
 				setIconImage(tool.getImage(MainFrame.class.getResource("FactoryTest.png")));
 
 				setResizable(false);
-				setTitle("kyChu.FactoryTester V0.1.0");
+				setTitle("kyChu.FactoryTester V1.0.0");
 				setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 				addWindowListener(wl);
 				setSize(1000, 500);
@@ -287,11 +287,10 @@ public class MainFrame extends JFrame {
 						RxAnalyse.rx_decode(recData[i]);
 					if(RxAnalyse.GotNewPackage()) {
 						GotResponseFlag = true;
-						if(VoltCalibStartFlag == false) {
-							Calib_H.setEnabled(true); Calib_L.setEnabled(true);
-						}
 						StopBurnInBtn.setEnabled(true);
-						if(ESCBurnInRunningFlag == false) {
+						if(ESCBurnInRunningFlag == false && VoltCalibStartFlag == false) {
+							Calib_H.setEnabled(true);
+							Calib_L.setEnabled(true);
 							StartBurnInBtn.setEnabled(true);
 						}
 						synchronized(new String("")) {//unnecessary (copy).
@@ -359,6 +358,7 @@ public class MainFrame extends JFrame {
 									if(rxData.rData[2] != 0x0) { /* Exception. */
 										Calib_H.setEnabled(true);
 										Calib_L.setEnabled(true);
+										StartBurnInBtn.setEnabled(true);
 										VoltCalBar.setValue(0);
 										VoltCalBar.setString("");
 										VoltCalibStartFlag = false;
@@ -375,6 +375,7 @@ public class MainFrame extends JFrame {
 										if(rxData.rData[1] >= 100) {//complete.
 											Calib_H.setEnabled(true);
 											Calib_L.setEnabled(true);
+											StartBurnInBtn.setEnabled(true);
 											VoltCalBar.setValue(0);
 											VoltCalBar.setString("");
 											VoltCalibStartFlag = false;
@@ -410,7 +411,7 @@ public class MainFrame extends JFrame {
 				} else if(ESCBurnInRunningFlag == true) {
 					txData.type = ComPackage.TYPE_ESC_BURN_IN_TEST;
 					txData.addByte(ESCBurnExpSpeed, 0);
-					txData.addByte((byte) (ESCBurnExpSpeed ^ 0xCC), 1);
+					txData.addByte((byte)(ESCBurnExpSpeed ^ 0xCC), 1);
 					txData.setLength(4);
 				} else if(GotVersionFlag == false) {
 					txData.type = ComPackage.TYPE_VERSION_REQUEST;
@@ -494,6 +495,7 @@ public class MainFrame extends JFrame {
 			if(VoltCalibStartFlag == false) {
 				Calib_H.setEnabled(false);
 				Calib_L.setEnabled(false);
+				StartBurnInBtn.setEnabled(false);
 				VoltCalibStartFlag = true;
 				VoltCalibReqVal = ComPackage.ADC_CALIBRATE_H;
 				new Thread(new VoltSampleWaitThread()).start();
@@ -506,6 +508,7 @@ public class MainFrame extends JFrame {
 			if(VoltCalibStartFlag == false) {
 				Calib_H.setEnabled(false);
 				Calib_L.setEnabled(false);
+				StartBurnInBtn.setEnabled(false);
 				VoltCalibStartFlag = true;
 				VoltCalibReqVal = ComPackage.ADC_CALIBRATE_L;
 				new Thread(new VoltSampleWaitThread()).start();
@@ -563,6 +566,8 @@ public class MainFrame extends JFrame {
 			if(ESCBurnInRunningFlag == false) {
 				ESCBurnInStartFlag = true;
 				ESCBurnInRunningFlag = true;
+				Calib_H.setEnabled(false);
+				Calib_L.setEnabled(false);
 				StartBurnInBtn.setEnabled(false);
 				new Thread(new ESCBurnInThread()).start();
 			}
@@ -599,6 +604,7 @@ public class MainFrame extends JFrame {
 			ESCBurnInBar.setValue(0);
 			while(TimeCnt > 0) {
 				TimeCnt --;
+				ESCBurnInBar.setValue(TimeCnt * 4);
 				ESCBurnInBar.setString("ΩµÀŸ÷–...");
 				ESCBurnExpSpeed = (byte) (TimeCnt * 2);
 				try {
