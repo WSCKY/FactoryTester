@@ -63,11 +63,6 @@ public class MainFrame extends JFrame {
 	private JPanel LEDPanel = new JPanel();
 	private JPanel ESCBurnInPanel = new JPanel();
 
-//	private JTextField VoltText = new JTextField(5);
-//	private JTextField VelXText = new JTextField(5);
-//	private JTextField VelYText = new JTextField(5);
-//	private JTextField PitchText = new JTextField(5);
-//	private JTextField RollText = new JTextField(5);
 	private JLabel VoltText = new JLabel("0.0");
 	private JLabel VelXText = new JLabel("0.0");
 	private JLabel VelYText = new JLabel("0.0");
