@@ -88,6 +88,7 @@ public class MainFrame extends JFrame {
 	private JCheckBox Green_Box = new JCheckBox("绿");
 
 	private JProgressBar ESCBurnInBar = new JProgressBar(0, 100);
+	private JButton MotorStartBtn = new JButton("启动");
 	private JButton StartBurnInBtn = new JButton("开始");
 	private JButton StopBurnInBtn = new JButton("停止");
 
@@ -191,17 +192,19 @@ public class MainFrame extends JFrame {
 				LEDPanel.add(Red_Box); LEDPanel.add(Blue_Box); LEDPanel.add(Green_Box);
 
 				ESCBurnInPanel.setBorder(BorderFactory.createTitledBorder(null, "老化测试", 0, 2, new Font("宋体", Font.PLAIN, 16)));
-				ESCBurnInPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 25, 5));
-				ESCBurnInBar.setPreferredSize(new Dimension(700, 30)); ESCBurnInBar.setString("");
+				ESCBurnInPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 22, 5));
+				ESCBurnInBar.setPreferredSize(new Dimension(586, 30)); ESCBurnInBar.setString("");
 				ESCBurnInBar.setFont(ESCBurnInBar.getFont().deriveFont(Font.ITALIC | Font.BOLD, 16));
 				ESCBurnInBar.setStringPainted(true); ESCBurnInPanel.add(ESCBurnInBar);
+				MotorStartBtn.setPreferredSize(new Dimension(100, 40)); MotorStartBtn.setEnabled(false);
+				MotorStartBtn.setFont(MotorStartBtn.getFont().deriveFont(Font.BOLD, 20));
+				MotorStartBtn.addActionListener(mstartl); ESCBurnInPanel.add(MotorStartBtn);
 				StartBurnInBtn.setPreferredSize(new Dimension(100, 40)); StartBurnInBtn.setEnabled(false);
 				StartBurnInBtn.setFont(StartBurnInBtn.getFont().deriveFont(Font.BOLD, 20));
-				StartBurnInBtn.addActionListener(bstartl);
+				StartBurnInBtn.addActionListener(bstartl); ESCBurnInPanel.add(StartBurnInBtn);
 				StopBurnInBtn.setPreferredSize(new Dimension(100, 40)); StopBurnInBtn.setEnabled(false);
 				StopBurnInBtn.setFont(StopBurnInBtn.getFont().deriveFont(Font.BOLD, 20));
-				StopBurnInBtn.addActionListener(bstopl);
-				ESCBurnInPanel.add(StartBurnInBtn); ESCBurnInPanel.add(StopBurnInBtn);
+				StopBurnInBtn.addActionListener(bstopl); ESCBurnInPanel.add(StopBurnInBtn);
 
 				add(InitRetPanel);
 				add(InfoPanel);
@@ -215,7 +218,7 @@ public class MainFrame extends JFrame {
 				setIconImage(tool.getImage(MainFrame.class.getResource("FactoryTest.png")));
 
 				setResizable(false);
-				setTitle("kyChu.FactoryTester V1.0.0");
+				setTitle("kyChu.FactoryTester V1.1.0");
 				setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 				addWindowListener(wl);
 				setSize(1000, 500);
@@ -291,7 +294,7 @@ public class MainFrame extends JFrame {
 						if(ESCBurnInRunningFlag == false && VoltCalibStartFlag == false) {
 							Calib_H.setEnabled(true);
 							Calib_L.setEnabled(true);
-							StartBurnInBtn.setEnabled(true);
+							MotorStartBtn.setEnabled(true);
 						}
 						synchronized(new String("")) {//unnecessary (copy).
 							try {
@@ -358,7 +361,7 @@ public class MainFrame extends JFrame {
 									if(rxData.rData[2] != 0x0) { /* Exception. */
 										Calib_H.setEnabled(true);
 										Calib_L.setEnabled(true);
-										StartBurnInBtn.setEnabled(true);
+										MotorStartBtn.setEnabled(true);
 										VoltCalBar.setValue(0);
 										VoltCalBar.setString("");
 										VoltCalibStartFlag = false;
@@ -375,7 +378,7 @@ public class MainFrame extends JFrame {
 										if(rxData.rData[1] >= 100) {//complete.
 											Calib_H.setEnabled(true);
 											Calib_L.setEnabled(true);
-											StartBurnInBtn.setEnabled(true);
+											MotorStartBtn.setEnabled(true);
 											VoltCalBar.setValue(0);
 											VoltCalBar.setString("");
 											VoltCalibStartFlag = false;
@@ -419,14 +422,14 @@ public class MainFrame extends JFrame {
 					txData.setLength(3);
 				} else if(WriteNewDSNFlag == true) {
 					if(_wDSN_CmdTog % 2 == 0) {
-						txData.type = ComPackage.TYPE_VERSION_REQUEST;
-						txData.addByte((byte)0x0F, 0);
-						txData.setLength(3);
-					} else {
 						txData.type = ComPackage.TYPE_DSN_UPDATE;
 						txData.addBytes(_NewDSN.getBytes(), 16, 0);
 						txData.addByte((byte)0xBB, 16);
 						txData.setLength(19);
+					} else {
+						txData.type = ComPackage.TYPE_VERSION_REQUEST;
+						txData.addByte((byte)0x0F, 0);
+						txData.setLength(3);
 					}
 					_wDSN_CmdTog ++;
 				} else {/* no operation */
@@ -468,6 +471,7 @@ public class MainFrame extends JFrame {
 						VER_txt.setText(""); DSN_txt.setText("");
 						bUpdateDSN.setEnabled(false);
 						Calib_H.setEnabled(false); Calib_L.setEnabled(false);
+						MotorStartBtn.setEnabled(false);
 						StartBurnInBtn.setEnabled(false); StopBurnInBtn.setEnabled(false);
 						IMUSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
 						BAROSta.setIcon(new ImageIcon(new ImageIcon(getClass().getResource("wait_s.gif")).getImage().getScaledInstance(25, 25, Image.SCALE_DEFAULT)));
@@ -495,7 +499,7 @@ public class MainFrame extends JFrame {
 			if(VoltCalibStartFlag == false) {
 				Calib_H.setEnabled(false);
 				Calib_L.setEnabled(false);
-				StartBurnInBtn.setEnabled(false);
+				MotorStartBtn.setEnabled(false);
 				VoltCalibStartFlag = true;
 				VoltCalibReqVal = ComPackage.ADC_CALIBRATE_H;
 				new Thread(new VoltSampleWaitThread()).start();
@@ -508,7 +512,7 @@ public class MainFrame extends JFrame {
 			if(VoltCalibStartFlag == false) {
 				Calib_H.setEnabled(false);
 				Calib_L.setEnabled(false);
-				StartBurnInBtn.setEnabled(false);
+				MotorStartBtn.setEnabled(false);
 				VoltCalibStartFlag = true;
 				VoltCalibReqVal = ComPackage.ADC_CALIBRATE_L;
 				new Thread(new VoltSampleWaitThread()).start();
@@ -535,9 +539,11 @@ public class MainFrame extends JFrame {
 	private String _NewDSN = "PXyyMMwwxxxxFn##";
 	private ActionListener ubl = new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-			WriteNewDSNFlag = true;
-			bUpdateDSN.setEnabled(false);
-			_NewDSN = dsnGenerator.GotNewDSN();
+			if(ESCBurnInRunningFlag == false && VoltCalibStartFlag == false) {
+				WriteNewDSNFlag = true;
+				bUpdateDSN.setEnabled(false);
+				_NewDSN = dsnGenerator.GotNewDSN();
+			}
 		}
 	};
 
@@ -559,15 +565,28 @@ public class MainFrame extends JFrame {
 		}
 	};
 
-	private static boolean ESCBurnInStartFlag = false;
 	private static boolean ESCBurnInRunningFlag = false;
-	private ActionListener bstartl = new ActionListener() {
+	private static boolean MotorStartFlag = false;
+	private ActionListener mstartl = new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
 			if(ESCBurnInRunningFlag == false) {
-				ESCBurnInStartFlag = true;
 				ESCBurnInRunningFlag = true;
+				MotorStartFlag = true;
+				ESCBurnExpSpeed = 0;
 				Calib_H.setEnabled(false);
 				Calib_L.setEnabled(false);
+				MotorStartBtn.setEnabled(false);
+				StartBurnInBtn.setEnabled(true);
+				ESCBurnInBar.setString("怠速准备...");
+			}
+		}
+	};
+
+	private static boolean ESCBurnInStartFlag = false;
+	private ActionListener bstartl = new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+			if(MotorStartFlag == true) {
+				ESCBurnInStartFlag = true;
 				StartBurnInBtn.setEnabled(false);
 				new Thread(new ESCBurnInThread()).start();
 			}
@@ -620,8 +639,12 @@ public class MainFrame extends JFrame {
 
 	private ActionListener bstopl = new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-			if(ESCBurnInStartFlag == true) {
+			if(ESCBurnInStartFlag == true || ESCBurnExpSpeed > 0) {
 				ESCBurnInStartFlag = false;
+			} else {
+				ESCBurnInBar.setString("");
+				StartBurnInBtn.setEnabled(false);
+				ESCBurnInRunningFlag = false;
 			}
 		}
 	};
