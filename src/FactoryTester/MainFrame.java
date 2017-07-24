@@ -668,6 +668,7 @@ public class MainFrame extends JFrame {
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}
+//		System.err.println(System.getProperty("user.dir"));//get program running directory.
 		new MainFrame();
 	}
 }
