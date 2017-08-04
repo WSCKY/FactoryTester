@@ -1,7 +1,7 @@
 /*
  * @brief  Communication package structure.
  * @author kyChu
- * @Date   2017/7/13
+ * @Date   2017/7/23
  */
 package protocol;
 
@@ -79,7 +79,9 @@ public class ComPackage implements Cloneable {
 	public static final byte FC_REFUSED_OVER_SIZE = (byte)0x2;
 	public static final byte FC_REFUSED_TYPE_ERROR = (byte)0x3;
 	public static final byte FC_REFUSED_LOW_VOLTAGE = (byte)0x4;
-	public static final byte FC_REFUSED_UNKNOWERROR = (byte)0x5;
+	public static final byte FC_REFUSED_FW_TYPE_ERROR = (byte)0x5;
+	public static final byte FC_REFUSED_UNKNOWERROR = (byte)0x6;
+	public static final byte FC_REFUSED_NO_ERROR = (byte)0xF;
 	/* -------- Factory Test -------- */
 	public static final byte TYPE_DSN_UPDATE = (byte)0xA0;
 	public static final byte TYPE_ADC_CALIBRATE = (byte)0xA1;
