@@ -218,7 +218,7 @@ public class MainFrame extends JFrame {
 				setIconImage(tool.getImage(MainFrame.class.getResource("FactoryTest.png")));
 
 				setResizable(false);
-				setTitle("kyChu.FactoryTester V1.1.0");
+				setTitle("kyChu.FactoryTester V1.2.0");
 				setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 				addWindowListener(wl);
 				setSize(1000, 500);
